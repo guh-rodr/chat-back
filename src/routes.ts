@@ -47,7 +47,7 @@ export function router(fastify: FastifyInstance, _: any, done: () => void) {
   fastify.post('/message', (request, reply) => {
     const messageReceived = request.body as MessageStructure
 
-    if (messageReceived.content.length === 0 || messageReceived.content.length > 200) {
+    if (messageReceived.content.length === 0 || messageReceived.content.length > 300) {
       return reply.status(422).send({
         error: 'Conteúdo da mensagem muito curto ou muito longo!'
       })
