@@ -8,7 +8,7 @@ import { MessageProps, getAllMessages } from './lib/database'
 import { router } from './routes'
 
 export const messages: MessageProps[] = getAllMessages()
-export const users = new Set()
+export const users = new Map()
 
 const server = fastify()
 

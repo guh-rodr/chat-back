@@ -13,7 +13,9 @@ export function router(fastify: FastifyInstance, _: any, done: () => void) {
   // -----------------------------
 
   fastify.get('/users', (_, reply) => {
-    reply.status(200).send([...users])
+    const usernames = [...users].map(o => o[0])
+
+    reply.status(200).send([...usernames])
   })
 
   // -----------------------------
@@ -44,6 +46,13 @@ export function router(fastify: FastifyInstance, _: any, done: () => void) {
 
   fastify.post('/message', (request, reply) => {
     const messageReceived = request.body as MessageStructure
+
+    if (messageReceived.content.length === 0 || messageReceived.content.length > 200) {
+      return reply.status(422).send({
+        error: 'Conteúdo da mensagem muito curto ou muito longo!'
+      })
+    }
+
     const message: MessageProps = {
       ...messageReceived,
       createdAt: Date.now()
@@ -69,10 +78,12 @@ export function router(fastify: FastifyInstance, _: any, done: () => void) {
   fastify.get('/', { websocket: true }, (socket, request: ConnectionRequest) => {
     const { username } = request.query
 
-    if (users.has(username)) {
+    const userExists = users.get(username)
+
+    if (userExists && userExists.ip !== request.ip) {
       socket.close(4001, `Já existe um usuário com o nome ${username} conectado, escolha outro nome de usuário.`)
     } else {
-      users.add(username)
+      users.set(username, { ip: request.ip })
 
       const newUsersCount = [...fastify.websocketServer.clients].filter(c => c.readyState === 1).length
 
