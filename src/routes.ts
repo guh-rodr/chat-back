@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, DoneFuncWithErrOrRes } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { users, messages } from ".";
 import { MessageStructure, MessageProps, createMessage } from "./lib/database";
 import { sendToAllClients, sendToClient } from "./lib/events";
@@ -79,22 +79,39 @@ export function router(fastify: FastifyInstance, _: any, done: () => void) {
     const { username } = request.query
 
     const userExists = users.get(username)
+    const usernameAlreadyInUse = userExists && userExists.ip !== request.ip
 
-    if (userExists && userExists.ip !== request.ip) {
+    if (usernameAlreadyInUse) {
       socket.close(4001, `Já existe um usuário com o nome ${username} conectado, escolha outro nome de usuário.`)
     } else {
-      users.set(username, { ip: request.ip })
+      if (socket.readyState === 1) {
+        users.set(username, { ip: request.ip })
+      }
 
-      const newUsersCount = [...fastify.websocketServer.clients].filter(c => c.readyState === 1).length
+      const newUsersCount = users.size
+      const isRepeatedConnection = userExists && userExists.ip === request.ip
 
-      sendToAllClients(fastify.websocketServer, { name: 'userJoin', user: username, counter: newUsersCount })
       sendToClient(socket, { name: 'messagesList', messages })
+      sendToAllClients(fastify.websocketServer, {
+        name: 'userJoin',
+        user: username,
+        counter: newUsersCount,
+        repeatedConn: isRepeatedConnection
+      })
 
       socket.on('close', () => {
-        const newUsersCount = [...fastify.websocketServer.clients].filter(c => c.readyState === 1).length
+        if (!isRepeatedConnection) {
+          users.delete(username)
+        }
 
-        users.delete(username)
-        sendToAllClients(fastify.websocketServer, { name: 'userLeft', user: username, counter: newUsersCount })
+        const newUsersCount = users.size
+
+        sendToAllClients(fastify.websocketServer, {
+          name: 'userLeft',
+          user: username,
+          counter: newUsersCount,
+          repeatedConn: isRepeatedConnection
+        })
       })
     }
   })
