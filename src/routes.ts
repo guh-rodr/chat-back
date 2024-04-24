@@ -61,7 +61,7 @@ export function router(fastify: FastifyInstance, _: any, done: () => void) {
       createdAt: Date.now()
     }
 
-    if (messages.length >= 5) {
+    if (messages.length > 49) {
       messages.shift()
     }
 
