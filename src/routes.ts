@@ -45,16 +45,19 @@ export function router(fastify: FastifyInstance, _: any, done: () => void) {
   // -----------------------------
 
   fastify.post('/message', (request, reply) => {
-    const messageReceived = request.body as MessageStructure
+    const receivedMessage = request.body as MessageStructure
 
-    if (messageReceived.content.length === 0 || messageReceived.content.length > 300) {
+    if (receivedMessage.content.length === 0 || receivedMessage.content.length > 300) {
       return reply.status(422).send({
         error: 'Conteúdo da mensagem muito curto ou muito longo!'
       })
     }
 
-    const message: MessageProps = {
-      ...messageReceived,
+    const { id } = createMessage(receivedMessage)
+
+    const createdMessage: MessageProps = {
+      id,
+      ...receivedMessage,
       createdAt: Date.now()
     }
 
@@ -62,11 +65,13 @@ export function router(fastify: FastifyInstance, _: any, done: () => void) {
       messages.shift()
     }
 
-    messages.push(message)
+    messages.push(createdMessage)
 
-    const { id } = createMessage(messageReceived)
-
-    sendToAllClients(fastify.websocketServer, { name: 'messageSent', message: { ...message, id }, removeOld: messages.length > 49 })
+    sendToAllClients(fastify.websocketServer, {
+      name: 'messageSent',
+      message: createdMessage,
+      removeOld: messages.length > 49
+    })
 
     reply.code(201).send({ ok: true })
   })

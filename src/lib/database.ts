@@ -8,6 +8,7 @@ export interface MessageStructure {
 }
 
 export interface MessageProps extends MessageStructure {
+  id: number | bigint
   createdAt: number
 }
 
