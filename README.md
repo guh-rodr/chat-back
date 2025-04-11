@@ -1,3 +1,5 @@
+> Este repositório foi importado de uma conta anterior minha. Todo o código e histórico de commits refletem meu trabalho.
+
 ## 💡 Sobre
 
 Esse projeto é o back-end de um chat, feito com o framework Fastify. Ele foi criado para demonstrar como conexões websocket podem ser usadas para compartilhar mensagens entre usuários em tempo real.
